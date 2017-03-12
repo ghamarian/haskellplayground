@@ -21,6 +21,7 @@ library
                       ,Sized
                       ,StringBuffer
                       ,JoinList
+                      ,Scrabble
   build-depends:       base >= 4.7 && < 5
                       ,mtl
                       ,QuickCheck

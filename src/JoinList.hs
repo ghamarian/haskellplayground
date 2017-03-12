@@ -1,10 +1,13 @@
 {-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module JoinList where
 
 import Sized
 import Data.Monoid
 import Test.QuickCheck
+import Scrabble
+import Buffer
 
 data JoinList m a = Empty
   | Single m a
@@ -88,3 +91,27 @@ prop_drop (NonNegative n) jl = jlToList (dropJ n jl) == drop n (jlToList jl)
 
 prop_take :: Eq a => NonNegative Int -> JoinList Size a -> Bool
 prop_take (NonNegative n) jl = jlToList (takeJ n jl) == take n (jlToList jl)
+
+scoreLine :: String -> JoinList Score String
+scoreLine a = Single (scoreString a) a
+
+instance Buffer (JoinList (Score, Size) String) where
+  toString :: JoinList (Score, Size) String -> String
+  toString = unlines . jlToList 
+
+  fromString :: String -> JoinList (Score, Size) String
+  fromString  = foldl (\jl str -> jl +++ scoreLine' str) Empty . lines where
+                   scoreLine' str = Single (scoreString str, Size 1) str
+
+  line :: Int -> JoinList (Score, Size) String -> Maybe String
+  line = indexJ
+
+  replaceLine :: Int -> String -> JoinList (Score, Size) String -> JoinList (Score, Size) String
+  replaceLine i s j = takeJ i j +++ fromString s +++ dropJ (i+1) j
+
+  numLines :: JoinList (Score, Size) String -> Int
+  numLines = getSize . snd . tag 
+
+  value :: JoinList (Score, Size) String -> Int
+  value = getScore . fst . tag
+
